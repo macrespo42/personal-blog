@@ -1,0 +1,9 @@
+{{ define "content" }}
+
+<h1>Personal Blog</h1>
+<ul>
+  {{ range .Articles }}
+  <li><a href="#">{{ .Title }}</a> {{ .CreationDate }}</li>
+  {{ end }}
+</ul>
+{{ end }}
