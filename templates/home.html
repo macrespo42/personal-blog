@@ -2,7 +2,7 @@
 
 <h1>Personal Blog</h1>
 <ul>
-  {{ range .Articles }}
+  {{ range . }}
   <li><a href="#">{{ .Title }}</a> {{ .CreationDate }}</li>
   {{ end }}
 </ul>
