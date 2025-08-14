@@ -61,7 +61,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/home", homeHandler)
-	http.ListenAndServe(":8080", nil)
+	router := http.NewServeMux()
+	router.HandleFunc("/", homeHandler)
+	router.HandleFunc("/home", homeHandler)
+	http.ListenAndServe(":8080", router)
 }
