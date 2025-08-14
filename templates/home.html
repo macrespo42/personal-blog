@@ -3,7 +3,7 @@
 <h1>Personal Blog</h1>
 <ul>
   {{ range . }}
-  <li><a href="#">{{ .Title }}</a> {{ .CreationDate }}</li>
+  <li><a href="/article/{{ .Id }}">{{ .Title }}</a> {{ .CreationDate }}</li>
   {{ end }}
 </ul>
 {{ end }}
