@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Article struct {
-	Id           int       `json:"id"`
+	Id           string    `json:"id"`
 	Title        string    `json:"title"`
 	Content      string    `json:"content"`
 	CreationDate time.Time `json:"creationDate"`
@@ -42,7 +43,7 @@ func getArticles() ([]Article, error) {
 	return articles, nil
 }
 
-func getArticleById(id int) (Article, error) {
+func getArticleById(id string) (Article, error) {
 	fileName := fmt.Sprintf("%v.json", id)
 	fileData, err := os.ReadFile(filepath.Join("./articles", fileName))
 	if err != nil {
@@ -86,12 +87,7 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "text/html")
-	idNb, err := strconv.Atoi(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	article, err := getArticleById(idNb)
+	article, err := getArticleById(id)
 	err = t.Execute(w, article)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -99,10 +95,60 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func publishHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/base.html", "./templates/addArticle.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	id := uuid.NewString()
+	creationDate := time.Now()
+	title := r.FormValue("title")
+	content := r.FormValue("content")
+
+	if title != "" && content != "" {
+		article := Article{
+			Id:           id,
+			CreationDate: creationDate,
+			Title:        title,
+			Content:      content,
+		}
+
+		fileName := fmt.Sprintf("%v.json", id)
+		f, err := os.Create(fileName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		articleByte, err := json.Marshal(article)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = f.Write(articleByte)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	err = t.Execute(w, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", homeHandler)
 	router.HandleFunc("/home", homeHandler)
 	router.HandleFunc("/article/{id}", articleHandler)
+	router.HandleFunc("/admin/publish", publishHandler)
 	http.ListenAndServe(":8080", router)
 }
