@@ -95,13 +95,11 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func publishHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("./templates/base.html", "./templates/addArticle.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+func newArticleHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
 		return
 	}
-
 	id := uuid.NewString()
 	creationDate := time.Now()
 	title := r.FormValue("title")
@@ -116,7 +114,8 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fileName := fmt.Sprintf("%v.json", id)
-		f, err := os.Create(fileName)
+		articlePath := filepath.Join("./articles", fileName)
+		f, err := os.Create(articlePath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -134,6 +133,15 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+	http.Redirect(w, r, "/home", http.StatusSeeOther)
+}
+
+func publishHandler(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./templates/base.html", "./templates/addArticle.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Add("Content-Type", "text/html")
 	err = t.Execute(w, nil)
@@ -141,7 +149,6 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func main() {
@@ -150,5 +157,6 @@ func main() {
 	router.HandleFunc("/home", homeHandler)
 	router.HandleFunc("/article/{id}", articleHandler)
 	router.HandleFunc("/admin/publish", publishHandler)
+	router.HandleFunc("/new-article", newArticleHandler)
 	http.ListenAndServe(":8080", router)
 }
