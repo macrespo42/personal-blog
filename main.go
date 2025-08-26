@@ -43,6 +43,26 @@ func getArticles() ([]Article, error) {
 	return articles, nil
 }
 
+func adminHandler(w http.ResponseWriter, r *http.Response) {
+	t, err := template.ParseFiles("./templates/base.html", "./templates/home.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	articles, err := getArticles()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, articles)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func getArticleById(id string) (Article, error) {
 	fileName := fmt.Sprintf("%v.json", id)
 	fileData, err := os.ReadFile(filepath.Join("./articles", fileName))
@@ -157,6 +177,6 @@ func main() {
 	router.HandleFunc("/home", homeHandler)
 	router.HandleFunc("/article/{id}", articleHandler)
 	router.HandleFunc("/admin/publish", publishHandler)
-	router.HandleFunc("/new-article", newArticleHandler)
+	router.HandleFunc("/new", newArticleHandler)
 	http.ListenAndServe(":8080", router)
 }
